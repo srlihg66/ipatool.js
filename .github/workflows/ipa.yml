@@ -1,0 +1,65 @@
+name: ipa down
+
+on: 
+  workflow_dispatch:
+    inputs:
+      APPLE_ID:
+        description: 'Apple ID Account'
+        required: true
+      PASSWORD:
+        description: 'Apple ID Password'
+        required: true
+      APP_VER_ID:
+        description: 'Historical Version ID'
+        required: true      
+      APPID:
+        description: 'App Store ID'
+        required: true        
+      CODE:
+        description: 'Two-factor authentication code'
+        required: false  # 如果需要，可以设置为 true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+        with:
+          repository: srlihg66/ipatool.js
+          path: ipatool.js
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '14'
+
+      - name: Install dependencies
+        run: |
+          cd ipatool.js
+          mkdir -p app
+          npm install
+
+      - name: Run the script
+        run: |
+          cd ipatool.js
+          node main.js
+        env:
+          APPLE_ID: ${{ github.event.inputs.APPLE_ID }}  # Apple ID
+          PASSWORD: ${{ github.event.inputs.PASSWORD }}  # Apple ID 密码
+          APP_VER_ID: ${{ github.event.inputs.APP_VER_ID }}  # 版本 ID
+          APPID: ${{ github.event.inputs.APPID }}  # 应用程序的 ID
+          CODE: ${{ github.event.inputs.CODE }}  # 两步验证代码
+
+      - name: Find and upload .ipa files
+        run: |
+          mkdir -p ipa_files
+          ls -R
+          find . -name "*.ipa" -exec cp {} ipa_files/ \;
+
+      - name: Upload .ipa files
+        uses: actions/upload-artifact@v2
+        with:
+          name: ipa-files
+          path: ipa_files/*
